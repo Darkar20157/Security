@@ -2,15 +2,23 @@ import math
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import cv2
-import face_recognition as fr
-import numpy as np
 import mediapipe as mp
 import os
 
+
+img_info = cv2.imread("./app/resources/img/recognition_facial_info.png")
+img_look_cam = cv2.imread("./app/resources/img/look_cam.png")
+img_look_cam_er = cv2.imread("./app/resources/img/look_cam_error.png")
+img_look_cam_sc = cv2.imread("./app/resources/img/look_cam_success.png")
+img_blinks = cv2.imread("./app/resources/img/blinks.png")
+register_success = cv2.imread("./app/resources/img/register_success.png")
+
 class ScanFaceID:
-    def __init__(self, user):
+    def __init__(self, document_nro, on_close_callback=None):
         # Media pipe
-        self.user = user
+        self.faceID_success = False
+        self.on_close_callback = on_close_callback
+        self.document_nro = document_nro
         self.blink = False
         self.count = 0
         self.see = 0
@@ -40,8 +48,10 @@ class ScanFaceID:
         self.video_frame = ctk.CTkLabel(master=self.window_modal)
         self.video_frame.pack(padx=20, pady=20)
         
+        ########################Boton para tomar la capturar la imagen si el parpadeo no funciona###########################
         self.btn_capture = ctk.CTkButton(master=self.window_modal, text='Capture Face', command=self.capture)
         self.btn_capture.pack(pady=10)
+        #####################################################################################################################
         
         self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         self.cap.set(3, 1280)
@@ -50,7 +60,7 @@ class ScanFaceID:
         self.faces = [] # Lista para almacenar las imagenes de los rostros capturados
         
         self.update_camera()
-        
+        self.window_modal.protocol("WM_DELETE_WINDOW", self.on_close)
         self.window_modal.mainloop()
         
     def capture(self):
@@ -63,7 +73,7 @@ class ScanFaceID:
     def update_camera(self):
         ret, frame = self.cap.read()
         self.frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        self.frame_save = frame.copy()
+        self.frame_save = frame.copy() # este frame es la foto cuando termina de hacer los 3 parpadeos
         if ret:
             res = self.face_mesh.process(self.frame_rgb)
             px = []
@@ -141,42 +151,45 @@ class ScanFaceID:
                                         
                                         #Steps
                                         if self.step == 0:
-                                            # print(f"Ceja Izquierda {eyebrow_x1}")
-                                            # print(f"Parental Derecho {prightx}")
+                                            img_info_y, img_info_x, img_info_b = img_info.shape
+                                            
+                                            #Se agrega mensajes de faceID
+                                            frame[100:100 + img_info_y, 50:50 + img_info_x] = img_info
+                                            
+                                            frame[400:400 + 200, 1000:1000 + 200] = img_blinks
+                                            
                                             #Face_Center
                                             if eyebrow_x1 > pleftx1 and eyebrow_x2 < prightx:
+                                                frame[100:100 + 200, 1000:1000 + 200] = img_look_cam_sc #Se coloca 200 ya que la img 200x200 deberia ser configurable
                                                 #Draw
                                                 cv2.rectangle(frame, (xi, yi, w, h), (0,255,0), 2)
                                             else:
+                                                frame[100:100 + 200, 1000:1000 + 200] = img_look_cam_er #Se coloca 200 ya que la img 200x200 deberia ser configurable
                                                 cv2.rectangle(frame, (xi, yi, w, h), (0,0,254), 2)
-                                                print("Se reinicia el conteo")
                                                 self.count = 0
                                                 
                                             #Count Blink
                                             if longitud1 <= 10 and longitud2 <= 10 and self.blink == False:
                                                 self.count = self.count + 1
                                                 self.blink = True
-                                                print(f"Parpadeos {self.count}")
                                             elif longitud1 > 10 and longitud2 > 10 and self.blink == True:
                                                 self.blink = False
                                                 
-                                            if self.count >= 3: 
+                                            cv2.putText(frame, f'{int(self.count)}', (1090, 520), cv2.QT_FONT_NORMAL, 0.8, (255, 255, 255), 2)
+                                            if self.count >= 3:
                                                 #Open Eyes
-                                                if longitud1 > 12 and longitud2 > 12:
+                                                if longitud1 > 15 and longitud2 > 15:
                                                     #save face
                                                     cut = self.frame_save[yi:yf, xi:xf]
-                                                    cv2.imwrite(f"./app/resources/faces/{self.user.entry_first_name.get()}.png", cut)
-                                                    
+                                                    # cv2.imwrite(f"./app/resources/faces/{self.user.entry_document_nro.get()}.png", cut)
+                                                    cv2.imwrite(f"./app/resources/faces/{self.document_nro}.png", cut)
                                                     #Step1
                                                     self.step = 1
                                                     
                                         if self.step == 1:
-                                            print("Se ha terminado el reconocimiento facial")
+                                            self.faceID_success = True
+                                            frame[100:100 + 200, 50:50 + 300] = register_success
                                             cv2.rectangle(frame, (xi, yi, w, h), (0,255,0), 2)
-                                            self.window_modal.protocol("WM_DELETE_WINDOW", self.on_close)
-                                                    
-                                    #Draw rectangle
-                                    # cv2.rectangle(frame, (xi, yi, w, h), (255, 255, 255), 2)
                     
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = cv2.resize(frame, (1280, 720))  # Redimensionar para que se ajuste al tamaño de la ventana
@@ -192,7 +205,10 @@ class ScanFaceID:
         self.blink = False
         self.step = 0
         self.cap.release()
+        cv2.destroyAllWindows()
         self.window_modal.destroy()
+        if self.on_close_callback:
+            self.on_close_callback()
         
 if __name__ == "__main__":
-    app = ScanFaceID()
+    app = ScanFaceID(1005714270)

@@ -8,14 +8,15 @@ class Persons(Model):
     id = AutoField(primary_key=True)
     active = BooleanField()
     register_date = DateTimeField()
-    update_date = DateTimeField()
+    update_date = DateTimeField(null=True)
     document_nro = CharField(unique=True)
     type_document = CharField(null=True)
     first_name = CharField()
     last_name = CharField()
     phone = CharField(null=True)
     email = CharField(null=True)
-    age = CharField(null=True)
+    age = DateTimeField(null=True)
+    location = CharField(null=True)
     
     class Meta:
         database = db
@@ -24,7 +25,7 @@ models = [Persons]
 try:
     with db:
         db.create_tables(models)
-        print("tablas creadas correctamente")
+        print("tabla Person fue creada correctamente")
 except OperationalError as e:
     print(f"Error al conectar a la base de datos: {e}")
     
@@ -40,7 +41,6 @@ except OperationalError as e:
 #         'last_name': 'Pérez',
 #         'phone': '123-456-789',
 #         'email': 'juan@example.com',
-#         'age': '30'
 #     },
 #     {
 #         'active': True,
@@ -52,7 +52,6 @@ except OperationalError as e:
 #         'last_name': 'Gómez',
 #         'phone': '987-654-321',
 #         'email': 'maria@example.com',
-#         'age': '25'
 #     },
 #     {
 #         'active': True,
@@ -64,7 +63,6 @@ except OperationalError as e:
 #         'last_name': 'Martínez',
 #         'phone': '456-789-123',
 #         'email': 'pedro@example.com',
-#         'age': '35'
 #     },
 #     {
 #         'active': True,
@@ -76,7 +74,6 @@ except OperationalError as e:
 #         'last_name': 'López',
 #         'phone': '789-123-456',
 #         'email': 'ana@example.com',
-#         'age': '28'
 #     },
 #     {
 #         'active': True,
@@ -88,7 +85,6 @@ except OperationalError as e:
 #         'last_name': 'González',
 #         'phone': '654-987-321',
 #         'email': 'luis@example.com',
-#         'age': '32'
 #     },
 #     {
 #         'active': True,
@@ -100,7 +96,6 @@ except OperationalError as e:
 #         'last_name': 'Hernández',
 #         'phone': '987-321-654',
 #         'email': 'elena@example.com',
-#         'age': '27'
 #     },
 #     {
 #         'active': True,
@@ -112,7 +107,6 @@ except OperationalError as e:
 #         'last_name': 'Sánchez',
 #         'phone': '321-987-654',
 #         'email': 'javier@example.com',
-#         'age': '30'
 #     },
 #     {
 #         'active': True,
@@ -124,7 +118,6 @@ except OperationalError as e:
 #         'last_name': 'Gutiérrez',
 #         'phone': '987-654-321',
 #         'email': 'sofia@example.com',
-#         'age': '29'
 #     },
 #     {
 #         'active': True,
@@ -136,7 +129,6 @@ except OperationalError as e:
 #         'last_name': 'Navarro',
 #         'phone': '654-321-987',
 #         'email': 'diego@example.com',
-#         'age': '31'
 #     },
 #     {
 #         'active': True,
@@ -148,7 +140,6 @@ except OperationalError as e:
 #         'last_name': 'Rojas',
 #         'phone': '321-654-987',
 #         'email': 'carla@example.com',
-#         'age': '26'
 #     },
 # ]
 

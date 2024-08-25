@@ -25,7 +25,7 @@ models = [Users]
 try:
     with db:
         db.create_tables(models)
-        print("tablas creadas correctamente")
+        print("La tabla user fue creada correctamente")
 except OperationalError as e:
     print(f"Error al conectar a la base de datos: {e}")
     
